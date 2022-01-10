@@ -1,0 +1,17 @@
+
+type Mutation {
+  register(
+    email: String!, 
+    password: String!
+  ): String @resolver(name: "RegisterUser")
+  login(
+    email: String!, 
+    password: String!
+  ): Token @resolver(name: "LoginUser")
+}
+
+type Token @embedded {
+  ttl: Time!
+  secret: String!
+  ref: String!
+}
