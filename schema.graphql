@@ -4,7 +4,7 @@ type Speaker {
   lastname: String!
   picture: String
   bio: String
-  talks: [Talk]
+  talks: [Talk!] @relation
 }
 
 type Talk {
