@@ -1,3 +1,4 @@
+
 import { query as q } from "faunadb";
 
 export default {
@@ -8,7 +9,7 @@ export default {
       ["email", "password"],
       q.Let(
         {
-          credentials: q.Login(q.Match(q.Index("UserByEmail"), q.Var("email")), {
+          credentials: q.Login(q.Match(q.Index("user_by_email"), q.Var("email")), {
             password: q.Var("password"),
             ttl: q.TimeAdd(q.Now(), 1800, "seconds")
           })
@@ -22,3 +23,4 @@ export default {
     )
   )
 };
+  

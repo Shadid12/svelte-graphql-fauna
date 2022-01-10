@@ -1,3 +1,4 @@
+
 import { query as q } from "faunadb";
 
 export default {
@@ -13,3 +14,4 @@ export default {
     )
   )
 };
+  

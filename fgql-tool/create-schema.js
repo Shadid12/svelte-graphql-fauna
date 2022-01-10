@@ -23,58 +23,61 @@ const retrieveInfo = async (fragment) => {
   return authable;
 }
 
-const createAuthFunctions = async () => { 
+const createAuthFunctions = async (authables) => { 
   const dir = 'fauna/functions'
   if (!fs.existsSync(dir)){
     await fs.mkdirSync(dir, { recursive: true });
   }
 
-  const content = `
-  import { query as q } from "faunadb";
+  const authModel = authables[0];
+  const primaryKey = authModel.args.find(a => a.name === 'primary');
 
-  export default {
-    name: "LoginUser",
-    body:
-    q.Query(
-      q.Lambda(
-        ["email", "password"],
-        q.Let(
-          {
-            credentials: q.Login(q.Match(q.Index("UserByEmail"), q.Var("email")), {
-              password: q.Var("password"),
-              ttl: q.TimeAdd(q.Now(), 1800, "seconds")
-            })
-          },
-          {
-            secret: q.Select("secret", q.Var("credentials")),
-            ttl: q.Select("ttl", q.Var("credentials")),
-            email: q.Var("email"),
-          }
-        )
+  const content = `
+import { query as q } from "faunadb";
+
+export default {
+  name: "Login${authModel.name}",
+  body:
+  q.Query(
+    q.Lambda(
+      ["${primaryKey.value}", "password"],
+      q.Let(
+        {
+          credentials: q.Login(q.Match(q.Index("${authModel.name.toLowerCase()}_by_${primaryKey.value}"), q.Var("${primaryKey.value}")), {
+            password: q.Var("password"),
+            ttl: q.TimeAdd(q.Now(), 1800, "seconds")
+          })
+        },
+        {
+          secret: q.Select("secret", q.Var("credentials")),
+          ttl: q.Select("ttl", q.Var("credentials")),
+          ${primaryKey.value}: q.Var("${primaryKey.value}"),
+        }
       )
     )
-  };
+  )
+};
   `
 
   const register = `
-    import { query as q } from "faunadb";
+import { query as q } from "faunadb";
 
-    export default {
-      name: "RegisterUser",
-      body:
-      q.Query(
-        q.Lambda(
-          ["email", "password"],
-          q.Create(q.Collection("User"), {
-            credentials: { password: q.Var("password") },
-            data: { email: q.Var("email")}
-          })
-        )
-      )
-    };
+export default {
+  name: "Register${authModel.name}",
+  body:
+  q.Query(
+    q.Lambda(
+      ["${primaryKey.value}", "password"],
+      q.Create(q.Collection("${authModel.name}"), {
+        credentials: { password: q.Var("password") },
+        data: { ${primaryKey.value}: q.Var("${primaryKey.value}")}
+      })
+    )
+  )
+};
   `
-  await fs.writeFileSync('fauna/indexes/login.js', content)
-  await fs.writeFileSync('fauna/indexes/register.js', register)
+  await fs.writeFileSync('fauna/functions/login.js', content)
+  await fs.writeFileSync('fauna/functions/register.js', register)
 }
 
 
@@ -114,6 +117,11 @@ const createSchema = async (authables) => {
     return;
   }
 
+  const dir = 'fauna'
+  if (!fs.existsSync(dir)){
+    await fs.mkdirSync(dir, { recursive: true });
+  }
+
   const authModel = authables[0];
   const primaryKey = authModel.args.find(a => a.name === 'primary');
   const content = `
@@ -145,13 +153,10 @@ const main = async () => {
     const authables = await retrieveInfo(fragment);
 
     await createSchema(authables);
-
     await createAuthIndex(authables);
-    // await createAuthFunctions();
+    await createAuthFunctions(authables);
     //file written successfully
     // exec('npm run fgu');
-
-    // Create a user index
 
   } catch (err) {
     console.error(err)
