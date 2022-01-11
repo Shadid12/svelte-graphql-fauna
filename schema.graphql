@@ -14,6 +14,11 @@ type Talk {
   speaker: Speaker!
 }
 
+type User @auth(primary: "email") {
+  email: String! @unique
+  username: String
+}
+
 type Query {
   talks: [Talk] # List of talks
   speakers: [Speaker] # List of speakers
