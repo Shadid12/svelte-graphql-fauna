@@ -15,8 +15,8 @@ type Talk {
 }
 
 type User @auth(primary: "email") {
-  username: String!
-  email: String! 
+  username: String
+  email: String! @unique
 }
 
 type Query {

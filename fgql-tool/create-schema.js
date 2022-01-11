@@ -100,8 +100,11 @@ const createAuthIndex = async (authables) => {
   export default {
     name: "${authModel.name.toLowerCase()}_by_${primaryKey.value}",
     source: q.Collection("${authModel.name}"),
-    values: [
-      { field: ["data", "${primaryKey.value}"] }
+    unique: true,
+    terms: [
+      {
+        field: ["data", "${primaryKey.value}"]
+      }
     ]
   }
 
@@ -111,7 +114,7 @@ const createAuthIndex = async (authables) => {
 
 }
 
-const createSchema = async (authables) => {
+const createSchema = async (authables, stitchType) => {
   if(authables.length > 1) { 
     console.log('Multiple Auth Models not Supported');
     return;
@@ -125,11 +128,16 @@ const createSchema = async (authables) => {
   const authModel = authables[0];
   const primaryKey = authModel.args.find(a => a.name === 'primary');
   const content = `
+
+type ${authModel.name} {
+  ${stitchType}
+}
+
 type Mutation {
   register(
     ${primaryKey.value}: String!, 
     password: String!
-  ): String @resolver(name: "Register${authModel.name}")
+  ): ${authModel.name} @resolver(name: "Register${authModel.name}")
   login(
     ${primaryKey.value}: String!, 
     password: String!
@@ -152,11 +160,15 @@ const main = async () => {
     const fragment = gql`${typeDefs}`;
     const authables = await retrieveInfo(fragment);
 
-    await createSchema(authables);
+    // Need to stytch back the auth model type
+    const authModelType = typeDefs.split('@auth(')[1]
+    const stitchType = authModelType.split('{')[1].split('}')[0]
+
+    await createSchema(authables, stitchType);
     await createAuthIndex(authables);
     await createAuthFunctions(authables);
     //file written successfully
-    // exec('npm run fgu');
+    exec('npm run fgu');
 
   } catch (err) {
     console.error(err)
