@@ -1,8 +1,9 @@
 <script>
   import { setClient } from '@urql/svelte';
 	import { mutation } from '@urql/svelte';
-  import client from '../_client'
-  import Cookies from 'js-cookie'
+  import client from '../_client';
+  import Cookies from 'js-cookie';
+  import { goto } from '$app/navigation';
 
   setClient(client);
 
@@ -32,6 +33,8 @@
     const resp = await loginMutation({ email, password })
     console.log(resp)
     Cookies.set('MY_SVELTE_APP', JSON.stringify(resp.data.login))
+    alert('Login Successful');
+    goto('/')
   }
 </script>
 

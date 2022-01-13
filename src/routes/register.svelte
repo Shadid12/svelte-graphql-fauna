@@ -2,6 +2,7 @@
   import { setClient } from '@urql/svelte';
 	import { mutation } from '@urql/svelte';
   import client from '../_client'
+  import { goto } from '$app/navigation';
 
   setClient(client);
 
@@ -28,6 +29,7 @@
     const resp = await registerMutation({ email, password })
     console.log(resp)
     alert('User Registered')
+    goto('/')
   }
 </script>
 
