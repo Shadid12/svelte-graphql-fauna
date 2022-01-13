@@ -12,11 +12,19 @@ type Talk {
   description: String!
   video_url: String!
   speaker: Speaker!
+  comments: [Comment!] @relation
+}
+
+type Comment {
+  content: String!
+  talk: Talk!
+  user: User!
 }
 
 type User @auth(primary: "email") {
   email: String! @unique
   username: String
+  comments: [Comment!] @relation
 }
 
 type Query {

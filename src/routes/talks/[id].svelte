@@ -28,6 +28,9 @@
 
   console.log('currentTalk', currentTalk)
 </script>
+
+<slot></slot>
+
 {#if $currentTalk.fetching}
 <p>Loading...</p>
 {:else}

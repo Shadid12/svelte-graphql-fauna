@@ -31,6 +31,8 @@
   console.log('Talks', talks)
 </script>
 
+<slot></slot>
+
 <h1>All Talks </h1>
 {#if $talks.fetching}
 <p>Loading...</p>
