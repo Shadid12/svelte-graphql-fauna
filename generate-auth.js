@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import gql from  'graphql-tag';
 
 
@@ -153,6 +153,54 @@ type Token @embedded {
   await fs.writeFileSync('fauna/schema.graphql', content)
 } 
 
+const createAuthRoles = async (authables) => { 
+  if(authables.length > 1) { 
+    console.log('Multiple Auth Models not Supported');
+    return;
+  }
+
+  const authModel = authables[0]
+  const dir = 'fauna/roles'
+  if (!fs.existsSync(dir)){
+    await fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const predicate = `
+    const onlyDeleteByOwner = q.Query(
+      q.Lambda(
+        "ref",
+        q.Equals(q.CurrentIdentity(), q.Select(["data", "user"], q.Get(q.Var("ref"))))
+      )
+    );
+  `
+
+  const privileges = `[
+    {
+      resource: q.Collection("${authModel.name}"),
+      actions: {
+        read: true,
+        create: true,
+        delete: onlyDeleteByOwner
+      }
+    }
+  ],`;
+
+  const content = `
+  import { query as q } from "faunadb";
+  ${predicate};
+  export default {
+    name: "${authModel.name}Role",
+    privileges: ${privileges}
+    membership: [
+      {
+        resource: q.Collection("${authModel.name}"),
+      }
+    ]
+  }
+  `
+  await fs.writeFileSync('fauna/roles/authRole.js', content)
+}
+
 
 const main = async () => {
   try {
@@ -167,8 +215,18 @@ const main = async () => {
     await createSchema(authables, stitchType);
     await createAuthIndex(authables);
     await createAuthFunctions(authables);
+
+    await createAuthRoles(authables);
     //file written successfully
-    exec('./node_modules/.bin/fgu');
+    const child = spawn('./node_modules/.bin/fgu');
+
+    child.stdout.on('data', (chunk) => {
+      console.log(chunk.toString());
+    });
+    
+    child.on('close', () => {
+      console.log(`Fauna GraphQL Schema Generated Successfully`);
+    });
 
   } catch (err) {
     console.error(err)

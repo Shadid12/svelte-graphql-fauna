@@ -15,7 +15,7 @@ type Talk {
   comments: [Comment!] @relation
 }
 
-type Comment {
+type Comment @protected(membership: "User", rule: ["read", "write"]) {
   content: String!
   talk: Talk!
   user: User!
@@ -30,4 +30,11 @@ type User @auth(primary: "email") {
 type Query {
   talks: [Talk] # List of talks
   speakers: [Speaker] # List of speakers
+}
+
+type Mutation {
+  search(
+    email: String!, 
+    password: String!
+  ): User @resolver(name: "Custom")
 }
