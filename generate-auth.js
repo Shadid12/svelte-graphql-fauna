@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { spawn } from 'child_process';
 import gql from  'graphql-tag';
+import { mergeTypes } from 'merge-graphql-schemas';
 
 
 
@@ -21,6 +22,24 @@ const retrieveInfo = async (fragment) => {
   }
   console.log('authable', JSON.stringify(authable))
   return authable;
+}
+
+const retrieveProtected = async (fragment) => { 
+  let _protected = [];
+  if(fragment.definitions) { 
+    fragment.definitions.forEach(def => {
+      if(def.directives && def.directives.length > 0) { 
+        let protectedFilter = def.directives.filter(d => d.name.value === 'protected')
+        protectedFilter.forEach(p => { 
+          _protected.push({
+            name: def.name.value,
+            args: p.arguments.map(a => ({ name: a.name.value, value: a.value.values })),
+          })
+        })
+      }
+    })
+  }
+  return _protected;
 }
 
 const createAuthFunctions = async (authables) => { 
@@ -114,7 +133,7 @@ const createAuthIndex = async (authables) => {
 
 }
 
-const createSchema = async (authables, stitchType) => {
+const createSchema = async (authables) => {
   if(authables.length > 1) { 
     console.log('Multiple Auth Models not Supported');
     return;
@@ -128,11 +147,6 @@ const createSchema = async (authables, stitchType) => {
   const authModel = authables[0];
   const primaryKey = authModel.args.find(a => a.name === 'primary');
   const content = `
-
-type ${authModel.name} {
-  ${stitchType}
-}
-
 type Mutation {
   register(
     ${primaryKey.value}: String!, 
@@ -150,10 +164,10 @@ type Token @embedded {
   data: ${authModel.name}
 }
   `;
-  await fs.writeFileSync('fauna/schema.graphql', content)
+  await fs.writeFileSync('fauna/newschema.graphql', content)
 } 
 
-const createAuthRoles = async (authables) => { 
+const createAuthRoles = async (authables, protectedModels) => { 
   if(authables.length > 1) { 
     console.log('Multiple Auth Models not Supported');
     return;
@@ -174,7 +188,7 @@ const createAuthRoles = async (authables) => {
     );
   `
 
-  const privileges = `[
+  let privileges = `
     {
       resource: q.Collection("${authModel.name}"),
       actions: {
@@ -182,8 +196,24 @@ const createAuthRoles = async (authables) => {
         create: true,
         delete: onlyDeleteByOwner
       }
-    }
-  ],`;
+    },`;
+
+  protectedModels.forEach(m => { 
+    let actions = {};
+    const rule = m.args.filter(z => z.name === 'rule');
+    rule[0].value.forEach(r => {
+      actions[r.value] = true;
+    });
+
+    
+    let prev = `{
+      resource: q.Collection("${m.name}"),
+      actions: ${JSON.stringify(actions)}
+    }`;
+    privileges += prev;
+  });
+
+  privileges = `[${privileges}],`;
 
   const content = `
   import { query as q } from "faunadb";
@@ -207,17 +237,25 @@ const main = async () => {
     const typeDefs = await fs.readFileSync('./schema.graphql').toString('utf-8');
     const fragment = gql`${typeDefs}`;
     const authables = await retrieveInfo(fragment);
+    const protectedModels = await retrieveProtected(fragment);
 
-    // Need to stytch back the auth model type
-    const authModelType = typeDefs.split('@auth(')[1]
-    const stitchType = authModelType.split('{')[1].split('}')[0]
-
-    await createSchema(authables, stitchType);
+    await createSchema(authables);
     await createAuthIndex(authables);
     await createAuthFunctions(authables);
 
-    await createAuthRoles(authables);
-    //file written successfully
+    await createAuthRoles(authables, protectedModels);
+
+    // merge graphql files
+    const graphqlChanges = await fs.readFileSync('./fauna/newschema.graphql').toString('utf-8');
+    const types = [
+      typeDefs,
+      graphqlChanges,
+    ];
+
+    const newTypeDefs = mergeTypes(types, { all: true });
+    let finalSchema = newTypeDefs.split('schema')[0];
+    await fs.writeFileSync('./fauna/schema.graphql', finalSchema);
+    
     const child = spawn('./node_modules/.bin/fgu');
 
     child.stdout.on('data', (chunk) => {
