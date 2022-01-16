@@ -38,9 +38,9 @@
   }
 </script>
 
-<div>
+<div class="wrap">
   <h3>Login Form</h3>
-  <form on:submit|preventDefault={onSubmit}>
+  <form on:submit|preventDefault={onSubmit} >
     <div>
         <label for="name">Email</label>
         <input
@@ -48,6 +48,7 @@
           id="email"
           name="email"
           value=""
+          class="input"
         />
     </div>
     <div>
@@ -57,8 +58,22 @@
         id="password"
         name="password"
         value=""
+        class="input"
       />
     </div>
-    <button type="submit">Submit</button>
+    <button class="button is-light" type="submit">Submit</button>
   </form>
 </div>
+
+<style>
+  .wrap {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  h3 {
+    margin-bottom: 20px;
+  }
+  input {
+    margin-bottom: 20px;
+  }
+</style>

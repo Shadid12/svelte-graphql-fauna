@@ -33,7 +33,7 @@
   }
 </script>
 
-<div>
+<div class="wrap">
   <h3>Register Form</h3>
   <form on:submit|preventDefault={onSubmit}>
     <div>
@@ -43,6 +43,7 @@
           id="email"
           name="email"
           value=""
+          class="input"
         />
     </div>
     <div>
@@ -52,8 +53,22 @@
         id="password"
         name="password"
         value=""
+        class="input"
       />
     </div>
-    <button type="submit">Register</button>
+    <button class="button is-light" type="submit">Register</button>
   </form>
 </div>
+
+<style>
+  .wrap {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  h3 {
+    margin-bottom: 20px;
+  }
+  input {
+    margin-bottom: 20px;
+  }
+</style>

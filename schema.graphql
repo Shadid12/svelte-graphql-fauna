@@ -15,7 +15,7 @@ type Talk {
   comments: [Comment!] @relation
 }
 
-type Comment @protected(membership: "User", rule: ["read", "write"]) {
+type Comment @protected(membership: "User", rule: ["read", "write", "create"]) {
   content: String!
   talk: Talk!
   user: User!

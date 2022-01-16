@@ -14,13 +14,19 @@
   }
 </script>
 
-<nav>
-  <a href="/">Home</a>
-  {#if sessionToken}
-    <a on:click|once={handleLogout} href="#">Logout</a>
-  {:else}
-    <a href="/login">Login</a>
-    <a href="/register">Register</a>
-  {/if}
-</nav>
-<slot></slot>
+<nav class="navbar">
+  <div class="navbar-menu">
+    <div class="navbar-start">
+      <a class="navbar-item" href="/">Home</a>
+      {#if sessionToken}
+        <a class="navbar-item" on:click|once={handleLogout} href="/#">Logout</a>
+      {:else}
+        <a class="navbar-item" href="/login">Login</a>
+        <a class="navbar-item" href="/register">Register</a>
+      {/if}
+    </div>
+  </div>
+</nav>  
+<div class="container">
+  <slot></slot>
+</div>

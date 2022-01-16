@@ -36,12 +36,39 @@
 {:else if $speakers.error}
 <p>Oh no... {$speakers.error.message}</p>
 {:else}
-<ul>
-  {#each $speakers.data.speakers.data as speaker}
-  <li>
-    <span>{speaker.firstname} {speaker.lastname}</span>
-    <button on:click={() => navigateToProfile(speaker._id)}>View</button>
-  </li>
-  {/each}
-</ul>
+
+
+{#each $speakers.data.speakers.data as speaker}
+
+<div class="card profile-card">
+  <a href={`/speakers/${speaker._id}`} >
+    <header class="card-header">
+      <img src="https://avatarfiles.alphacoders.com/118/thumb-1920-118398.png" alt=""/>
+      {speaker.firstname} {speaker.lastname}
+    </header>
+  </a>
+</div>
+
+{/each}
+
 {/if}
+
+<style>
+  h1 {
+    margin-bottom: 20px;
+  }
+  .profile-card {
+    max-width: 300px;
+  }
+  header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+  }
+
+  img {
+    height: 60px;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+</style>

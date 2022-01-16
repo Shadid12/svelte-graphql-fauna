@@ -1,7 +1,8 @@
 import fs from 'fs';
 import { spawn } from 'child_process';
 import gql from  'graphql-tag';
-import { mergeTypes } from 'merge-graphql-schemas';
+import { mergeTypeDefs } from '@graphql-tools/merge';
+import { print } from 'graphql';
 
 
 
@@ -179,13 +180,54 @@ const createAuthRoles = async (authables, protectedModels) => {
     await fs.mkdirSync(dir, { recursive: true });
   }
 
-  const predicate = `
+  const predicates = `
     const onlyDeleteByOwner = q.Query(
       q.Lambda(
         "ref",
         q.Equals(q.CurrentIdentity(), q.Select(["data", "user"], q.Get(q.Var("ref"))))
       )
     );
+
+    /**
+     * Use this predicate to Restrict Create only to owner
+     */
+    // const onlyCreateByOwner = q.Query(
+    //   q.Lambda(
+    //     "values", 
+    //     q.Equals(
+    //       q.Identity(), 
+    //       q.Select(["data", "owner"], q.Var("values"))
+    //     )
+    //   )
+    // )
+
+    /**
+     * Use this predicate to Restrict Read only to owner
+     */
+    // const onlyReadByOwner = q.Query(
+    //   q.Lambda("ref", q.Equals(
+    //     q.Identity(), // logged in user
+    //     q.Select(["data", "owner"], q.Get(q.Var("ref")))
+    //   ))
+    // )
+
+    /**
+     * User this predicate to Restrict Update only to owner
+     */
+    // const onlyOwnerWrite = q.Query(
+    //   q.Lambda(
+    //     ["oldData", "newData"],
+    //     q.And(
+    //       q.Equals(q.Identity(), q.Select(["data", "owner"], q.Var("oldData"))),
+    //       q.Equals(
+    //         q.Select(["data", "owner"], q.Var("oldData")),
+    //         q.Select(["data", "owner"], q.Var("newData"))
+    //       )
+    //     )
+    //   )
+    // )
+
+
   `
 
   let privileges = `
@@ -217,7 +259,7 @@ const createAuthRoles = async (authables, protectedModels) => {
 
   const content = `
   import { query as q } from "faunadb";
-  ${predicate};
+  ${predicates};
   export default {
     name: "${authModel.name}Role",
     privileges: ${privileges}
@@ -252,8 +294,11 @@ const main = async () => {
       graphqlChanges,
     ];
 
-    const newTypeDefs = mergeTypes(types, { all: true });
-    let finalSchema = newTypeDefs.split('schema')[0];
+    const newTypeDefs = mergeTypeDefs(types);
+    const schemaPrint = print(newTypeDefs);
+    // const finalSchema = buildSchema(print(newTypeDefs));
+    // console.log('finalSchema', JSON.stringify(newTypeDefs));
+    let finalSchema = schemaPrint.split('schema')[0];
     await fs.writeFileSync('./fauna/schema.graphql', finalSchema);
     
     const child = spawn('./node_modules/.bin/fgu');

@@ -39,19 +39,38 @@
 {:else if $talks.error}
 <p>Oh no... {$talks.error.message}</p>
 {:else}
-<p>by {$talks.data.findSpeakerByID.firstname} {$talks.data.findSpeakerByID.lastname}</p>
+<p class="talk-by">by {$talks.data.findSpeakerByID.firstname} {$talks.data.findSpeakerByID.lastname}</p>
 
-<ul>
-  {#each $talks.data.findSpeakerByID.talks.data as talk}
-  <li>
-    <a href={`/talks/${talk._id}`}>
-      <h4>{talk.title}</h4>
-      <div>{talk.description}</div>
-    </a>
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <!-- <iframe width="420" height="315" src={`https://www.youtube.com/embed/${talk.video_url}`}></iframe> -->
-  </li>
-  {/each}
-</ul>
+
+{#each $talks.data.findSpeakerByID.talks.data as talk}
+
+<div class="card talk-item">
+  <a href={`/talks/${talk._id}`} >
+  <div class="card-content">
+    <p class="title">
+      {talk.title}
+    </p>
+    <p class="subtitle">
+      {talk.description}
+    </p>
+  </div>
+  </a>
+</div>
+{/each}
 
 {/if}
+
+<style>
+  .talk-item {
+    border: 1px solid;
+    margin-bottom: 20px;
+    max-width: 400px;
+    box-shadow: 9px 10px 0 #5c7aff;
+  }
+  .talk-item:hover {
+    box-shadow: 9px 10px 0 #e50774;
+  }
+  .talk-by {
+    margin-bottom: 30px;
+  }
+</style>
