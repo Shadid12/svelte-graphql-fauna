@@ -4,9 +4,6 @@
 	import { operationStore, query } from '@urql/svelte';
   import client from '../../_client'
   setClient(client);
-
-  console.log('--->>', $page.params.id)
-  
   const talks = operationStore(`
     query($id: ID!) {
       findSpeakerByID(id: $id) {

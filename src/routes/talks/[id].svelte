@@ -1,11 +1,10 @@
 <script>
   import { page } from '$app/stores';
+  import Comments from '$lib/Comments.svelte'
   import { setClient } from '@urql/svelte';
 	import { operationStore, query } from '@urql/svelte';
   import client from '../../_client'
   setClient(client);
-
-  console.log('--->>', $page.params.id)
   
   const currentTalk = operationStore(`
     query GetTalk($id: ID!) {
@@ -25,8 +24,6 @@
   { id: $page.params.id }
   )
 	query(currentTalk);
-
-  console.log('currentTalk', currentTalk)
 </script>
 
 <slot></slot>
@@ -38,4 +35,6 @@
 <p>{$currentTalk.data.findTalkByID.description}</p>
 <!-- svelte-ignore a11y-missing-attribute -->
 <iframe width="420" height="315" src={`https://www.youtube.com/embed/${$currentTalk.data.findTalkByID.video_url}`}></iframe>
+
+<Comments comments={[]}/>
 {/if}
